@@ -130,21 +130,68 @@ class AudioScanner @Inject constructor(
         FileUtils.isSupportedAudioFile(file)
 
     private fun fileToTrack(file: File): Track {
-        val title = file.nameWithoutExtension
+        val parsed = FileNameParser.parse(file.name)
+        val probe = probeAudio(file)
         return Track(
             id = (file.absolutePath.hashCode().toLong() and Long.MAX_VALUE) or (1L shl 40),
-            title = title,
-            artist = "Unknown Artist",
+            title = parsed.title,
+            artist = parsed.artist ?: "Unknown Artist",
             album = "Unknown Album",
-            durationMs = 0L,
+            durationMs = probe.durationMs,
             path = file.absolutePath,
             albumArtUri = null,
             folderPath = file.parent ?: "",
             dateAdded = file.lastModified() / 1000,
-            trackNumber = 0,
+            trackNumber = parsed.trackNumber ?: 0,
             year = 0,
             mimeType = "audio/*",
             sizeBytes = file.length(),
+            sampleRate = probe.sampleRate,
+            bitrate = probe.bitrate,
         )
+    }
+
+    private data class AudioProbe(val durationMs: Long, val sampleRate: Int, val bitrate: Int)
+
+    /**
+     * Reads what the container itself knows: duration, sample rate and a
+     * bitrate estimate. Fast enough per file on the IO dispatcher and it
+     * means the quality chip in Now Playing works for untagged files too.
+     */
+    private fun probeAudio(file: File): AudioProbe {
+        var durationMs = 0L
+        var sampleRate = 0
+        val retriever = android.media.MediaMetadataRetriever()
+        try {
+            @Suppress("DEPRECATION")
+            retriever.setDataSource(file.absolutePath)
+            durationMs = retriever.extractMetadata(
+                android.media.MediaMetadataRetriever.METADATA_KEY_DURATION,
+            )?.toLongOrNull() ?: 0L
+        } catch (_: Exception) {
+            // Unreadable container: leave zeros, the player still handles it.
+        } finally {
+            retriever.release()
+        }
+        val extractor = android.media.MediaExtractor()
+        try {
+            extractor.setDataSource(file.absolutePath)
+                for (i in 0 until extractor.trackCount) {
+                    val format = extractor.getTrackFormat(i)
+                    val mime = format.getString(android.media.MediaFormat.KEY_MIME) ?: continue
+                    if (mime.startsWith("audio/")) {
+                        sampleRate = if (format.containsKey(android.media.MediaFormat.KEY_SAMPLE_RATE)) {
+                            format.getInteger(android.media.MediaFormat.KEY_SAMPLE_RATE)
+                        } else 0
+                        break
+                    }
+                }
+        } catch (_: Exception) {
+            // Quality stays unknown; format label still derives from extension.
+        } finally {
+            extractor.release()
+        }
+        val bitrate = if (durationMs > 0) (file.length() * 8 / (durationMs / 1000)).toInt() else 0
+        return AudioProbe(durationMs, sampleRate, bitrate)
     }
 }

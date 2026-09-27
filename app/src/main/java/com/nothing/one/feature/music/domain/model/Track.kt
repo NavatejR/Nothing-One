@@ -28,6 +28,35 @@ data class Track(
 
     val extension: String
         get() = path.substringAfterLast(".", "").lowercase()
+
+    /** Display name of the codec/container, e.g. FLAC, M4A, MP3. */
+    val formatLabel: String
+        get() = when (extension) {
+            "mp4" -> "M4A"
+            "aif" -> "AIFF"
+            "dff", "dsf" -> "DSD"
+            else -> extension.uppercase()
+        }
+
+    /** Formats ExoPlayer decodes bit-perfectly — no lossy transform. */
+    val isLossless: Boolean
+        get() = extension in setOf("flac", "wav", "alac", "aiff", "aif", "dsf", "dff")
+
+    /** One-line quality summary for the Now Playing screen. */
+    val qualityLabel: String
+        get() = buildString {
+            append(formatLabel)
+            if (sampleRate >= 1000) {
+                append(" · ")
+                append("%.1fk".format(sampleRate / 1000f))
+            }
+            if (isLossless) {
+                append(" · LOSSLESS")
+            } else if (bitrate > 0) {
+                append(" · ")
+                append("${bitrate / 1000}kbps")
+            }
+        }
 }
 
 fun formatDuration(totalSeconds: Int): String {

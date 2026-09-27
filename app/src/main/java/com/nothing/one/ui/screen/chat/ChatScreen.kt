@@ -198,14 +198,14 @@ fun ChatScreen(viewModel: ChatViewModel) {
                 value = input,
                 onValueChange = { input = it },
                 modifier = Modifier.weight(1f),
-                placeholder = { Text("Message", style = MaterialTheme.typography.bodyMedium) },
-                textStyle = MaterialTheme.typography.bodyMedium,
+                placeholder = { Text("Message", style = MaterialTheme.typography.bodyLarge) },
+                textStyle = MaterialTheme.typography.bodyLarge,
                 maxLines = 4,
-                shape = RoundedCornerShape(10.dp),
+                shape = MaterialTheme.shapes.small,
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = NothingRed,
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
                     unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                    cursorColor = NothingRed,
+                    cursorColor = MaterialTheme.colorScheme.primary,
                 ),
             )
             Spacer(Modifier.width(8.dp))

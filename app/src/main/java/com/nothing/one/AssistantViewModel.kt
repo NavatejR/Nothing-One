@@ -54,6 +54,11 @@ class AssistantViewModel @Inject constructor(
         .map { it.reducedMotion }
         .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
+    /** Full settings for the live theme (text scale, font, accent). */
+    val settings: StateFlow<com.nothing.one.data.Settings?> = settingsRepository.settings
+        .map { it }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
     /** First-launch flag resolved once; drives the start route. */
     val startRoute: StateFlow<String?> = settingsRepository.settings
         .map { if (it.onboarded) Routes.NOTES else Routes.ONBOARDING }

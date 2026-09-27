@@ -44,6 +44,19 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { settingsRepository.setReducedMotion(reduced) }
     }
 
+    /** Appearance setters — the theme recomposes live from these. */
+    fun setTextScale(scale: Float) {
+        viewModelScope.launch { settingsRepository.setTextScale(scale) }
+    }
+
+    fun setFontMode(mode: com.nothing.one.data.FontMode) {
+        viewModelScope.launch { settingsRepository.setFontMode(mode) }
+    }
+
+    fun setAccentHex(hex: String) {
+        viewModelScope.launch { settingsRepository.setAccentColorHex(hex) }
+    }
+
     /**
      * Exports everything to Markdown through SAF. No JSON variant — Markdown
      * is what a human actually reads when they leave an app behind.

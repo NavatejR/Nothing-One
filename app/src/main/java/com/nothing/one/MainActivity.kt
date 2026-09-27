@@ -73,7 +73,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            NothingJournalTheme {
+            val appSettings by viewModel.settings.collectAsState()
+            NothingJournalTheme(settings = appSettings) {
                 NothingOneApp(viewModel)
             }
         }

@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
@@ -35,6 +36,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -78,6 +80,9 @@ fun JournalScreen(
     val today = remember { EntryRepository.todayIndex() }
     val zone = remember { ZoneId.systemDefault() }
     val dictating = orbState == OrbState.LISTENING || orbState == OrbState.THINKING
+    val streak by journalViewModel.streak.collectAsState()
+    val totalDays by journalViewModel.totalDays.collectAsState()
+    val recentDays by journalViewModel.recentDays.collectAsState()
 
     Box(
         modifier = Modifier
@@ -126,7 +131,40 @@ fun JournalScreen(
                     .verticalScroll(rememberScrollState())
                     .padding(horizontal = 24.dp),
             ) {
-                Spacer(Modifier.height(20.dp))
+                Spacer(Modifier.height(14.dp))
+
+                // Stats row — the page opens with numbers, not silence.
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    JournalStatCard("STREAK", "$streak", Modifier.weight(1f))
+                    JournalStatCard("DAYS", "$totalDays", Modifier.weight(1f))
+                    JournalStatCard(
+                        "TODAY",
+                        entry?.mood?.let { Mood.fromValue(it)?.label?.uppercase() } ?: "—",
+                        Modifier.weight(1f),
+                    )
+                }
+
+                Spacer(Modifier.height(14.dp))
+
+                // RECENT DAYS — last two weeks at a glance, tap to open.
+                if (recentDays.isNotEmpty()) {
+                    SectionLabel("RECENT DAYS")
+                    Spacer(Modifier.height(6.dp))
+                    recentDays.take(5).forEach { day ->
+                        RecentDayRow(
+                            preview = day,
+                            isToday = day.dayIndex == today,
+                            selected = day.dayIndex == selectedDay,
+                            onClick = { journalViewModel.selectDay(day.dayIndex) },
+                        )
+                        Spacer(Modifier.height(6.dp))
+                    }
+                    Spacer(Modifier.height(6.dp))
+                }
+
                 DotMatrixText(
                     text = DAY_HEADER.format(LocalDate.ofEpochDay(selectedDay)).uppercase(),
                     style = MaterialTheme.typography.titleLarge,
@@ -166,6 +204,8 @@ fun JournalScreen(
                 Spacer(Modifier.height(16.dp))
                 SectionLabel("ENTRY")
                 Spacer(Modifier.height(8.dp))
+                // Shared composer style: identical to the assistant input so
+                // every text box in the app reads as one voice.
                 OutlinedTextField(
                     value = bodyText,
                     onValueChange = { journalViewModel.onBodyChange(it) },
@@ -180,10 +220,11 @@ fun JournalScreen(
                         )
                     },
                     textStyle = MaterialTheme.typography.bodyLarge,
+                    shape = MaterialTheme.shapes.small,
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = NothingRed,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
                         unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                        cursorColor = NothingRed,
+                        cursorColor = MaterialTheme.colorScheme.primary,
                     ),
                 )
 
@@ -274,6 +315,79 @@ fun JournalScreen(
 }
 
 
+
+@Composable
+private fun JournalStatCard(label: String, value: String, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(10.dp))
+            .background(MaterialTheme.colorScheme.surface)
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(10.dp))
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+    ) {
+        DotMatrixText(
+            text = value,
+            style = MaterialTheme.typography.titleLarge,
+            color = if (value != "—" && label == "TODAY") MaterialTheme.colorScheme.primary
+            else MaterialTheme.colorScheme.onSurface,
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+private fun RecentDayRow(
+    preview: com.nothing.one.ui.screen.journal.JournalViewModel.DayPreview,
+    isToday: Boolean,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    val mood = Mood.fromValue(preview.moodValue.takeIf { it > 0 })
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .background(if (selected) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surface)
+            .border(
+                1.dp,
+                if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                RoundedCornerShape(8.dp),
+            )
+            .clickable(onClick = onClick)
+            .padding(horizontal = 10.dp, vertical = 8.dp),
+    ) {
+        Box(
+            Modifier
+                .size(8.dp)
+                .background(mood?.color ?: MaterialTheme.colorScheme.outlineVariant, CircleShape),
+        )
+        Spacer(Modifier.width(10.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                text = if (isToday) "TODAY" else DAY_HEADER.format(LocalDate.ofEpochDay(preview.dayIndex)).uppercase(),
+                style = MaterialTheme.typography.labelSmall,
+                color = if (isToday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            if (preview.preview.isNotBlank()) {
+                Text(
+                    text = preview.preview,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+        if (isToday) {
+            RedDot(size = 5.dp)
+        }
+    }
+}
 
 @Composable
 private fun DayCell(

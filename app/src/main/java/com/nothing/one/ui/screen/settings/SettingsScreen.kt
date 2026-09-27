@@ -3,7 +3,10 @@ package com.nothing.one.ui.screen.settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -11,9 +14,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
@@ -30,15 +36,20 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.nothing.one.ai.EngineState
 import com.nothing.one.ai.OnDeviceAiClient
+import com.nothing.one.data.FontMode
 import com.nothing.one.ui.components.DotGridDivider
 import com.nothing.one.ui.components.DotMatrixBadge
 import com.nothing.one.ui.components.DotMatrixText
 import com.nothing.one.ui.components.RedDot
 import com.nothing.one.ui.components.SectionLabel
+import com.nothing.one.ui.theme.AccentPresets
 import com.nothing.one.ui.theme.NothingRed
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -84,6 +95,117 @@ fun SettingsScreen(
 
         Column(Modifier.padding(horizontal = 24.dp)) {
             Spacer(Modifier.height(20.dp))
+
+            // Appearance section — text size, fonts and the accent color.
+            SectionLabel("APPEARANCE")
+            Spacer(Modifier.height(12.dp))
+
+            Text("TEXT SIZE", style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.height(6.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf("S" to 0.85f, "M" to 1.0f, "L" to 1.15f, "XL" to 1.3f).forEach { (label, scale) ->
+                    val selected = kotlin.math.abs((settings?.textScale ?: 1f) - scale) < 0.01f
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(if (selected) NothingRed else MaterialTheme.colorScheme.surface)
+                            .border(
+                                1.dp,
+                                if (selected) NothingRed else MaterialTheme.colorScheme.outlineVariant,
+                                RoundedCornerShape(8.dp),
+                            )
+                            .clickable { viewModel.setTextScale(scale) }
+                            .padding(horizontal = 14.dp, vertical = 8.dp),
+                    ) {
+                        DotMatrixText(
+                            text = label,
+                            style = MaterialTheme.typography.labelMedium,
+                            color = if (selected) Color.Black else MaterialTheme.colorScheme.onSurface,
+                        )
+                    }
+                }
+            }
+            Text(
+                text = "Scales every label, body and title in the app",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 4.dp),
+            )
+
+            Spacer(Modifier.height(16.dp))
+
+            Text("DISPLAY FONT", style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.height(6.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FontMode.entries.forEach { mode ->
+                    val selected = (settings?.fontMode ?: FontMode.NOTHING) == mode
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(if (selected) NothingRed else MaterialTheme.colorScheme.surface)
+                            .border(
+                                1.dp,
+                                if (selected) NothingRed else MaterialTheme.colorScheme.outlineVariant,
+                                RoundedCornerShape(8.dp),
+                            )
+                            .clickable { viewModel.setFontMode(mode) }
+                            .padding(horizontal = 14.dp, vertical = 8.dp),
+                    ) {
+                        DotMatrixText(
+                            text = if (mode == FontMode.NOTHING) "NOTHING" else "INTER",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = if (selected) Color.Black else MaterialTheme.colorScheme.onSurface,
+                        )
+                    }
+                }
+            }
+            Text(
+                text = "NOTHING keeps the dot-matrix on titles; INTER uses one typeface everywhere",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 4.dp),
+            )
+
+            Spacer(Modifier.height(16.dp))
+
+            Text("ACCENT COLOR", style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                AccentPresets.forEach { (label, color) ->
+                    val selected = settings?.accentColorHex?.equals(
+                        "#%06X".format(color.toArgb() and 0xFFFFFF), ignoreCase = true,
+                    ) == true
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Box(
+                            modifier = Modifier
+                                .size(34.dp)
+                                .clip(CircleShape)
+                                .background(color)
+                                .border(
+                                    width = if (selected) 3.dp else 1.dp,
+                                    color = if (selected) MaterialTheme.colorScheme.onSurface
+                                    else MaterialTheme.colorScheme.outlineVariant,
+                                    shape = CircleShape,
+                                )
+                                .clickable {
+                                    viewModel.setAccentHex("#%06X".format(color.toArgb() and 0xFFFFFF))
+                                },
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = label.split(" ").first(),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (selected) MaterialTheme.colorScheme.onSurface
+                            else MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(24.dp))
 
             // Engine section — the model ships with the app; nothing to configure.
             SectionLabel("LOCAL ENGINE")

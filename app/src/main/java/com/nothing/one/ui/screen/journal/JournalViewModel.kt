@@ -49,6 +49,40 @@ class JournalViewModel @Inject constructor(
     val moodSeries: StateFlow<List<Pair<Long, Int>>> = entryRepository.observeMoodSeries()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
+    /** One row of the RECENT DAYS board on the journal page. */
+    data class DayPreview(val dayIndex: Long, val moodValue: Int, val preview: String)
+
+    /** Last two weeks: day, mood and the entry's first line. */
+    val recentDays: StateFlow<List<DayPreview>> = entryRepository.observeRecentJournal(14)
+        .map { list ->
+            list.mapNotNull { e ->
+                e.dayIndex?.let {
+                    DayPreview(
+                        dayIndex = it,
+                        moodValue = e.mood ?: 0,
+                        preview = e.body.lineSequence().firstOrNull { line -> line.isNotBlank() }
+                            ?.take(64).orEmpty(),
+                    )
+                }
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    /** Current journaling streak for the stats row. */
+    val streak: StateFlow<Int> = entryRepository.observeJournalDays()
+        .map { days ->
+            com.nothing.one.ui.screen.home.HomeViewModel.computeStreak(
+                days.toSet(),
+                EntryRepository.todayIndex(),
+            )
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
+
+    /** Total days ever journaled — the second stat on the page. */
+    val totalDays: StateFlow<Int> = entryRepository.observeJournalDays()
+        .map { it.size }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
+
     private val _bodyText = MutableStateFlow("")
     val bodyText: StateFlow<String> = _bodyText.asStateFlow()
 

@@ -54,6 +54,8 @@ Permissions declared: `RECORD_AUDIO` (dictation), `READ_CALENDAR` / `WRITE_CALEN
 | ![Home](screenshots/01-home.png) | ![Music](screenshots/02-music.png) | ![Notes](screenshots/03-notes.png) |
 | **Journal** | **Assistant** | **Focus** |
 | ![Journal](screenshots/04-journal.png) | ![Assistant](screenshots/05-assistant.png) | ![Focus](screenshots/06-focus.png) |
+| **Now Playing** | **Appearance** | |
+| ![Now Playing](screenshots/07-nowplaying.png) | ![Appearance](screenshots/08-appearance.png) | |
 
 ## The orb
 

@@ -65,12 +65,14 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.nothing.one.feature.music.domain.model.Track
 import com.nothing.one.feature.music.ui.PlayerViewModel
 import com.nothing.one.feature.music.ui.component.AlbumArtView
+import com.nothing.one.feature.music.util.FileUtils
 import com.nothing.one.feature.music.ui.component.DotMatrixText
 import com.nothing.one.feature.music.ui.component.NothingLinearProgress
 import com.nothing.one.feature.music.ui.screen.lyrics.LyricsBottomSheet
 import com.nothing.one.feature.music.service.toTrack
 import com.nothing.one.feature.music.ui.theme.DotMatrixFont
 import com.nothing.one.feature.music.ui.theme.NothingTextSecondary
+import com.nothing.one.feature.music.ui.theme.NothingTextTertiary
 import com.nothing.one.feature.music.domain.model.formatDurationMs
 import kotlinx.coroutines.delay
 
@@ -177,6 +179,45 @@ fun NowPlayingScreen(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
+
+            // Format / quality line — codec, sample rate, lossless badge.
+            track?.let { t ->
+                if (t.qualityLabel.isNotBlank()) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(
+                                    if (t.isLossless) MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)
+                                    else MaterialTheme.colorScheme.surfaceVariant
+                                )
+                                .padding(horizontal = 6.dp, vertical = 2.dp),
+                        ) {
+                            Text(
+                                text = t.formatLabel,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = if (t.isLossless) MaterialTheme.colorScheme.primary
+                                else NothingTextSecondary,
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = t.qualityLabel.substringAfter(" · "),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = NothingTextSecondary,
+                        )
+                        if (t.sizeBytes > 0) {
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = FileUtils.formatBytes(t.sizeBytes),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = NothingTextTertiary,
+                            )
+                        }
+                    }
+                }
+            }
 
             if (isPlaying) {
                 Spacer(modifier = Modifier.height(18.dp))
