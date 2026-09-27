@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Data extraction rules (Android 12+): local journals and notes stay on the
+  device. AI weights are excluded from every transfer — they are re-staged
+  from the APK on first use, so shipping them in a backup is 600 MB of
+  pointless, model-licensed bytes.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="database" path="nothing_one.db" />
+        <exclude domain="sharedpref" path="." />
+        <exclude domain="file" path="gemma3-1b-it-int4.task" />
+        <exclude domain="file" path="ggml-tiny.en.bin" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="database" path="nothing_one.db" />
+        <exclude domain="sharedpref" path="." />
+        <exclude domain="file" path="gemma3-1b-it-int4.task" />
+        <exclude domain="file" path="ggml-tiny.en.bin" />
+    </device-transfer>
+</data-extraction-rules>

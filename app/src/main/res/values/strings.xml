@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Nothing One</string>
+    <string name="noti_channel_media">Playback</string>
+    <string name="noti_channel_focus">Focus sessions</string>
+</resources>

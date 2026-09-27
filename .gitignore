@@ -1,0 +1,25 @@
+# Gradle
+.gradle/
+build/
+app/build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+captures/
+.externalNativeBuild/
+.cxx/
+.kotlin/
+
+# Local configuration
+local.properties
+keystore.properties
+
+# AI model weights (~600 MB) — fetched via scripts/fetch-models.sh
+app/src/main/assets/ai/*.task
+app/src/main/assets/ai/*.bin
+
+# Logs & OS noise
+*.log
+.DS_Store

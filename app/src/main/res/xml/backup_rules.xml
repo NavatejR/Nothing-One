@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <!-- Local databases and preferences only; AI weights are re-staged from
+         the APK on first use, so excluding them keeps backups tiny. -->
+    <exclude domain="file" path="gemma3-1b-it-int4.task" />
+    <exclude domain="file" path="ggml-tiny.en.bin" />
+</full-backup-content>

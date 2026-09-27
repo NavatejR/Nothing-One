@@ -1,0 +1,72 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build release APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # Optional signing: with the four RELEASE_* secrets set, the APK is
+      # signed with the release key; without them the build falls back to
+      # the debug key (see app/build.gradle.kts) and still produces an
+      # installable APK.
+      - name: Decode signing keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "RELEASE_KEYSTORE_BASE64 not set — release APK will be debug-signed."
+            exit 0
+          fi
+          mkdir -p "$HOME/.android/keystores"
+          echo "$KEYSTORE_BASE64" | base64 --decode > "$HOME/.android/keystores/nothing-one-release.keystore"
+          cat > keystore.properties <<EOF
+          storeFile=$HOME/.android/keystores/nothing-one-release.keystore
+          storePassword=$KEYSTORE_PASSWORD
+          keyAlias=$KEY_ALIAS
+          keyPassword=$KEY_PASSWORD
+          EOF
+
+      - name: Run unit tests
+        run: ./gradlew app:testDebugUnitTest --stacktrace
+
+      - name: Build release APK
+        run: ./gradlew app:assembleRelease --stacktrace
+
+      - name: Rename APK with version tag
+        run: |
+          cp app/build/outputs/apk/release/app-release.apk \
+            NothingOne-${GITHUB_REF_NAME#v}-release.apk
+
+      - name: Attach APK to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: NothingOne-*-release.apk
+          generate_release_notes: true
+          body: |
+            > **Note:** CI builds exclude the on-device AI models (~600 MB,
+            > not redistributable via this repo). Run `./scripts/fetch-models.sh`
+            > and rebuild locally for the full assistant experience. Everything
+            > else in this APK is complete.

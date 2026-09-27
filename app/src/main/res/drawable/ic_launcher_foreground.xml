@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- The flag: stepped cells sweeping down-left into the stem. -->
+    <path
+        android:fillColor="#FF0044"
+        android:pathData="M46,26h5v5h-5z M41,31h5v5h-5z M36,36h5v5h-5z" />
+    <!-- The stem: a dot-matrix column. -->
+    <path
+        android:fillColor="#FF0044"
+        android:pathData="M52,26h5v5h-5z M52,31h5v5h-5z M52,36h5v5h-5z M52,41h5v5h-5z
+            M52,46h5v5h-5z M52,51h5v5h-5z M52,56h5v5h-5z M52,61h5v5h-5z M52,66h5v5h-5z M52,71h5v5h-5z" />
+    <!-- The base serif and the full stop. -->
+    <path
+        android:fillColor="#FF0044"
+        android:pathData="M47,76h5v5h-5z M57,76h5v5h-5z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M67,76h5v5h-5z" />
+</vector>
